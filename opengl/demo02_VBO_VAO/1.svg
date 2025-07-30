@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500">
+    <!-- 样式定义 -->
+    <style>
+        .box { fill: #f0f7ff; stroke: #73a6ff; stroke-width: 2; rx: 10; ry: 10; }
+        .box-highlight { fill: #fff6cc; stroke: #ffbc52; }
+        .text { font-family: Arial, sans-serif; font-size: 14px; }
+        .title { font-family: Arial, sans-serif; font-size: 18px; font-weight: bold; }
+        .arrow { fill: none; stroke: #333; stroke-width: 2; marker-end: url(#arrowhead); }
+        .dashed-arrow { fill: none; stroke: #333; stroke-width: 2; stroke-dasharray: 5,5; marker-end: url(#arrowhead); }
+        .legend-item { font-family: Arial, sans-serif; font-size: 12px; }
+    </style>
+    
+    <!-- 箭头标记定义 -->
+    <defs>
+        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#333" />
+        </marker>
+    </defs>
+    
+    <!-- 标题 -->
+    <text x="400" y="30" text-anchor="middle" class="title">VAO、VBO和location关系图</text>
+    
+    <!-- 图例 -->
+    <rect x="600" y="50" width="180" height="100" fill="white" stroke="#999" rx="5" ry="5" />
+    <text x="610" y="70" class="legend-item">图例:</text>
+    <rect x="610" y="85" width="20" height="15" fill="#f0f7ff" stroke="#73a6ff" />
+    <text x="640" y="100" class="legend-item">对象/缓冲区</text>
+    <rect x="610" y="110" width="20" height="15" fill="#fff6cc" stroke="#ffbc52" />
+    <text x="640" y="125" class="legend-item">当前活动对象</text>
+    <line x1="610" y1="140" x2="630" y2="140" class="arrow" />
+    <text x="640" y="145" class="legend-item">数据流向</text>
+    <line x1="610" y1="165" x2="630" y2="165" class="dashed-arrow" />
+    <text x="640" y="170" class="legend-item">配置/绑定关系</text>
+    
+    <!-- CPU内存区域 -->
+    <text x="100" y="90" class="text" font-weight="bold">CPU内存</text>
+    <rect x="20" y="100" width="160" height="250" fill="#f9f9f9" stroke="#ccc" rx="5" ry="5" />
+    <text x="100" y="130" class="text">顶点数据</text>
+    <rect x="40" y="150" width="120" height="180" fill="white" stroke="#999" />
+    <text x="100" y="170" class="text">float vertices[] = {</text>
+    <text x="100" y="190" class="text">  // 位置      // 颜色</text>
+    <text x="100" y="210" class="text">  -0.5, -0.5, 0.0, 1.0, 0.0, 0.0,</text>
+    <text x="100" y="230" class="text">   0.5, -0.5, 0.0, 0.0, 1.0, 0.0,</text>
+    <text x="100" y="250" class="text">   0.0,  0.5, 0.0, 0.0, 0.0, 1.0</text>
+    <text x="100" y="270" class="text">};</text>
+    
+    <!-- GPU内存区域 -->
+    <text x="400" y="90" class="text" font-weight="bold">GPU内存</text>
+    <rect x="220" y="100" width="550" height="250" fill="#f9f9f9" stroke="#ccc" rx="5" ry="5" />
+    
+    <!-- VAO -->
+    <rect x="250" y="130" width="180" height="180" class="box" />
+    <text x="340" y="155" class="text" font-weight="bold">VAO (ID: 1)</text>
+    <text x="340" y="175" class="text">┌───────────────────┐</text>
+    <text x="340" y="195" class="text">│ 顶点属性配置列表 │</text>
+    <text x="340" y="215" class="text">└───────────────────┘</text>
+    
+    <!-- 属性配置项1 (位置) -->
+    <rect x="270" y="220" width="140" height="50" fill="white" stroke="#999" rx="5" ry="5" />
+    <text x="340" y="240" class="text">属性 #0 (位置)</text>
+    <text x="340" y="260" class="text">→ VBO绑定: 101</text>
+    
+    <!-- 属性配置项2 (颜色) -->
+    <rect x="270" y="280" width="140" height="50" fill="white" stroke="#999" rx="5" ry="5" />
+    <text x="340" y="300" class="text">属性 #1 (颜色)</text>
+    <text x="340" y="320" class="text">→ VBO绑定: 101</text>
+    
+    <!-- VBO -->
+    <rect x="450" y="130" width="180" height="180" class="box-highlight" />
+    <text x="540" y="155" class="text" font-weight="bold">VBO (ID: 101)</text>
+    <text x="540" y="175" class="text">┌───────────────────┐</text>
+    <text x="540" y="195" class="text">│ 顶点数据缓冲区    │</text>
+    <text x="540" y="215" class="text">└───────────────────┘</text>
+    <text x="540" y="235" class="text">┌───┬───┬───┬───┬───┬───┐</text>
+    <text x="540" y="255" class="text">│-0.5│-0.5│0.0│1.0│0.0│0.0│ ...</text>
+    <text x="540" y="275" class="text">└───┴───┴───┴───┴───┴───┘</text>
+    <text x="540" y="290" class="text">位置数据       颜色数据</text>
+    
+    <!-- 着色器 -->
+    <rect x="650" y="130" width="120" height="180" class="box" />
+    <text x="710" y="155" class="text" font-weight="bold">着色器</text>
+    <text x="710" y="175" class="text">┌───────────────────┐</text>
+    <text x="710" y="195" class="text">│ layout(location=0) │</text>
+    <text x="710" y="215" class="text">│ in vec3 aPosition; │</text>
+    <text x="710" y="235" class="text">│                   │</text>
+    <text x="710" y="255" class="text">│ layout(location=1) │</text>
+    <text x="710" y="275" class="text">│ in vec3 aColor;    │</text>
+    <text x="710" y="290" class="text">└───────────────────┘</text>
+    
+    <!-- 箭头连接 -->
+    <!-- CPU到GPU数据传输 -->
+    <path d="M180,220 C200,220 220,220 230,220" class="arrow" />
+    
+    <!-- VAO绑定VBO -->
+    <path d="M430,240 C440,240 445,240 450,240" class="dashed-arrow" />
+    
+    <!-- VBO数据流向着色器 -->
+    <path d="M630,240 C640,240 645,240 650,240" class="arrow" />
+    
+    <!-- 属性#0 (location=0) 绑定 -->
+    <path d="M410,245 C420,245 430,245 435,245" class="dashed-arrow" />
+    
+    <!-- 属性#1 (location=1) 绑定 -->
+    <path d="M410,305 C420,305 430,305 435,305" class="dashed-arrow" />
+    
+    <!-- 渲染结果 -->
+    <text x="400" y="380" class="title">渲染结果</text>
+    <circle cx="400" cy="420" r="30" fill="red" />
+    <circle cx="480" cy="420" r="30" fill="green" />
+    <circle cx="440" cy="370" r="30" fill="blue" />
+    <polygon points="400,420 480,420 440,370" fill="rgba(255,255,255,0.3)" stroke="white" stroke-width="1" />
+</svg>
+    

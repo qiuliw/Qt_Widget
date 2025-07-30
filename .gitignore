@@ -8,21 +8,17 @@ CMakeLists.txt.user
 .vscode/
 .DS_Store
 # C/C++ 项目
-build/          # CMake/Ninja 构建目录
-cmake-build-*/  # CLion 默认构建目录
-*.o             # 编译目标文件
-*.a             # 静态库
-*.so            # 动态库
-*.exe           # 可执行文件
-*.out           # Linux 可执行文件
+build/
+.CMakeLists.txt.user
+.cmake-build-debug/
+.cmake-build-release/
+.clion/
+.cache/
 
-*.mp4           # 视频
-*.mkv           # 视频容器
-*.yuv           # 原始视频数据
-*.avi           # 视频
-*.mov           # 视频
-*.wav           # 音频
-*.mp3           # 音频
-*.zip           # 压缩包
-*.tar           # 归档文件
-*.gz            # 压缩文件
+
+*.mp4
+*.mkv
+*.avi
+*.gif
+*.yuv
+*.pcm
