@@ -5,8 +5,11 @@
 #include <cstdio>
 #include <ostream>
 #include <qdebug.h>
+#include <qobjectdefs.h>
 #include <qopenglext.h>
 #include <iostream>
+#include <QTimer>
+#include <QWidget>
 
 // 自动加双引号
 #define GET_STR(x) #x
@@ -151,7 +154,12 @@ void XVideoWidget::initializeGL()
         qDebug() << "open file error";
         return;
     }
-    
+
+    // 启动定时器
+    QTimer *timer = new QTimer(this);
+    // QOverload<>::of 是 Qt 提供的一个用于解决 C++ 函数重载时信号与槽连接歧义问题的工具。它属于 QOverload 模板类的一部分，帮助开发者在使用 Qt 5 风格的信号与槽连接（即基于函数指针的方式）时，明确指定要连接的具体重载函数版本。
+    connect(timer, &QTimer::timeout, this, QOverload<>::of(&XVideoWidget::update));
+    timer->start(1000 / 30);
 }
 
 // 刷新显示
