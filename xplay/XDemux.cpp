@@ -108,7 +108,7 @@ AVPacket* XDemux::Read()
     std::lock_guard<std::mutex> lk(mtx_);
     if(!ic_) return nullptr;
     AVPacket *pkt = av_packet_alloc(); // 分配一个AVPacket对象空间
-    int re = av_read_frame(ic_, pkt); // 申请缓冲区并读取一帧
+    int re = av_read_frame(ic_, pkt); // 申请缓冲区并读取一个包
     if(re != 0) { 
         av_packet_free(&pkt);
         return nullptr;
@@ -184,4 +184,16 @@ void XDemux::Close()
     std::lock_guard<std::mutex> lk(mtx_);
     if(!ic_) return;
     avformat_close_input(&ic_);
+}
+
+bool XDemux::isAudio(AVPacket *pkt)
+{
+    if(!pkt) return false;
+    return pkt->stream_index == audioStream_;
+}
+
+bool XDemux::isVideo(AVPacket *pkt)
+{
+    if(!pkt) return false;
+    return pkt->stream_index == videoStream_;
 }

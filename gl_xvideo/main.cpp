@@ -2,6 +2,11 @@
 
 #include <QApplication>
 
+
+/*
+    使用OpenGL的直接模式绘制视频
+
+*/
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);

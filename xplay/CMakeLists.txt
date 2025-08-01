@@ -12,9 +12,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets OpenGLWidgets)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets OpenGLWidgets)
 
-aux_source_directory(. SRC_LIST)
 set(PROJECT_SOURCES
-        ${SRC_LIST}
+        main.cpp
+        widget.cpp
+        widget.h
+        XDecode.cpp
+        XDecode.h
+        XDemux.cpp
+        XDemux.h
 )
 # 头文件目录
 include_directories(${PROJECT_SOURCE_DIR})

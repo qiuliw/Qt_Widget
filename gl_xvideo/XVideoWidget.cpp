@@ -122,7 +122,7 @@ void XVideoWidget::initializeGL()
     
     // Y
     glBindTexture(GL_TEXTURE_2D,texs[0]);
-    // 放大缩小过滤，线性插值
+    // 放大缩小过滤，线性插值。GL_NEAREST(效率高，但马赛克严重)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     // 创建材质空间

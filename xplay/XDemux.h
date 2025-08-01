@@ -35,6 +35,10 @@ public:
     virtual void Close();
 
     int totalMs_ = 0;
+
+    // pkt携带流索引，而索引类型需要从解封装器判断
+    bool isAudio(AVPacket *pkt);
+    bool isVideo(AVPacket *pkt);
     
 private:
     // 解封装上下文
@@ -43,4 +47,5 @@ private:
     int videoStream_ = 0;
     int audioStream_ = 1;
     std::mutex mtx_; // 对ic的操作需要互斥
+
 };
