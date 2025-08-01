@@ -20,6 +20,8 @@ set(PROJECT_SOURCES
         XDecode.h
         XDemux.cpp
         XDemux.h
+        XVideoWidget.cpp
+        XVideoWidget.h
 )
 # 头文件目录
 include_directories(${PROJECT_SOURCE_DIR})
