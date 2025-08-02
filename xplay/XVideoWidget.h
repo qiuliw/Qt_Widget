@@ -3,6 +3,9 @@
 #include <QtOpenGL/qopenglshaderprogram.h>
 #include <QtOpenGLWidgets/QOpenGLWidget>
 #include <QOpenGLFunctions>
+#include <mutex>
+
+class AVFrame;
 
 class XVideoWidget : public QOpenGLWidget, protected QOpenGLFunctions
 {
@@ -11,7 +14,10 @@ class XVideoWidget : public QOpenGLWidget, protected QOpenGLFunctions
 public:
     XVideoWidget(QWidget *parent = nullptr);
     ~XVideoWidget();
-
+    // 初始化材质内存与材质原始宽高，每次渲染时从frame读入材质
+    void Init(int w, int h);
+    // 不管成功与否都释放掉frame空间
+    virtual void Repaint(AVFrame *frame);// 画面重绘
 protected:
     void initializeGL() override;
     void paintGL() override;
@@ -25,8 +31,10 @@ private:
     // shader中texture变量地址
     GLuint texs[3] = {0};
     // 材质的内存空间
-    std::unique_ptr<unsigned char[]> datas[3];
+    unsigned char* datas[3] = {0};
 
-    int width_ = 240;
-    int height_ = 128;
+    int width_;
+    int height_;
+
+    std::mutex mtx_;
 };

@@ -9,7 +9,7 @@ Widget::Widget(QWidget *parent)
     resize(800, 600);
 
     // 创建 XVideoWidget
-    XVideoWidget *videoWidget = new XVideoWidget(this);
+    videoWidget = new XVideoWidget(this);
     videoWidget->setFixedSize(800, 600);  // 固定大小 800x600
 
     // 创建布局管理器，使 videoWidget 居中

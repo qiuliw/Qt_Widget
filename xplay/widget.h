@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include "XDemux.h"
+#include "XVideoWidget.h"
 
 class Widget : public QWidget
 {
@@ -11,6 +12,7 @@ class Widget : public QWidget
 public:
     Widget(QWidget *parent = nullptr);
     ~Widget();
+    XVideoWidget *videoWidget;
 private:
 };
 #endif // WIDGET_H

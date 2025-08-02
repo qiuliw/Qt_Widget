@@ -35,7 +35,6 @@ XDemux::~XDemux()
 {
     
 }
-
 bool XDemux::Open(const char *url)
 {
 
@@ -58,7 +57,7 @@ bool XDemux::Open(const char *url)
         char buf[1024] = {0};
         av_strerror(re, buf, sizeof(buf)-1);
         std::cout << "open input failed: " << buf << std::endl;
-        return -1;
+        return false;
     }
     std::cout << "open input success" << std::endl;
 
@@ -71,37 +70,44 @@ bool XDemux::Open(const char *url)
     av_dump_format(ic_, 0, url, 0);
 
     // 获取视频流
-    videoStream_ = av_find_best_stream(ic_, AVMEDIA_TYPE_AUDIO, -1, -1, NULL,0);
-    AVStream *as = ic_->streams[videoStream_];
-    qDebug() << "视频流信息";
-    std::cout << "sample_rate: " << as->codecpar->sample_rate << std::endl;
-    std::cout << "format :" << as->codecpar->format << std::endl;
-    // 在 FFmpeg 的较新版本中，AVCodecParameters 结构体的成员名称发生了变化。channels 成员已经被替换为 ch_layout 结构体，这是为了支持更全面的声道布局信息。
-    std::cout << "channel layout: " << as->codecpar->ch_layout.u.mask << std::endl;
-    std::cout << "number of channels: " << as->codecpar->ch_layout.nb_channels << std::endl;
-    // 获取解码器名称
-    std::cout << "codec_id: " << avcodec_get_name(as->codecpar->codec_id) << std::endl; 
-    // 一帧数据：单通道的样本数 fps = sample_rate / frame_size   样本率：每秒采集的样本数 帧大小：每帧的样本数
-    std::cout << "frame_size: " << as->codecpar->frame_size << std::endl;
-    
+    videoStream_ = av_find_best_stream(ic_, AVMEDIA_TYPE_VIDEO, -1, -1, NULL,0);
+    if (videoStream_ >= 0) {
+        AVStream *as = ic_->streams[videoStream_];
+        width_ = as->codecpar->width;
+        height_ = as->codecpar->height;
+        qDebug() << "视频流信息";
+        std::cout << "width: " << as->codecpar->width << std::endl;
+        std::cout << "height: " << as->codecpar->height << std::endl;
+        std::cout << "format :" << as->codecpar->format << std::endl;
+        // 在 FFmpeg 的较新版本中，AVCodecParameters 结构体的成员名称发生了变化。channels 成员已经被替换为 ch_layout 结构体，这是为了支持更全面的声道布局信息。
+        std::cout << "codec_id: " << avcodec_get_name(as->codecpar->codec_id) << std::endl; 
+        // 帧率 fps, 分数转换
+        std::cout << "av_frame_rate: " << av_q2d(as->avg_frame_rate) << std::endl;
+    } else {
+        qDebug() << "未找到视频流";
+    }
+
     // 获取音频流
-    audioStream_ = av_find_best_stream(ic_, AVMEDIA_TYPE_VIDEO, -1, -1, NULL,0);
-    as = ic_->streams[audioStream_];
-    qDebug() << "音频流信息";
-    std::cout << "sample_rate: " << as->codecpar->sample_rate << std::endl;
-    std::cout << "format: " << as->codecpar->format << std::endl; // 像素格式
-    // 在 FFmpeg 的较新版本中，AVCodecParameters 结构体的成员名称发生了变化。channels 成员已经被替换为 ch_layout 结构体，这是为了支持更全面的声道布局信息。
-    std::cout << "channel layout: " << as->codecpar->ch_layout.u.mask << std::endl;
-    std::cout << "number of channels: " << as->codecpar->ch_layout.nb_channels << std::endl;
-    // std::cout << "width:" << as->codecpar->width << std::endl;
-    // std::cout << "height:" << as->codecpar->height << std::endl;
-    // 获取解码器名称
-    std::cout << "codec_id: " << avcodec_get_name(as->codecpar->codec_id) << std::endl; 
-    // 帧率 fps, 分数转换
-    std::cout << "av_frame_rate: " << av_q2d(as->avg_frame_rate) << std::endl;
+    audioStream_ = av_find_best_stream(ic_, AVMEDIA_TYPE_AUDIO, -1, -1, NULL,0);
+    if (audioStream_ >= 0) {
+        AVStream *as = ic_->streams[audioStream_];
+        qDebug() << "音频流信息";
+        std::cout << "sample_rate: " << as->codecpar->sample_rate << std::endl;
+        std::cout << "format: " << as->codecpar->format << std::endl; // 像素格式
+        // 在 FFmpeg 的较新版本中，AVCodecParameters 结构体的成员名称发生了变化。channels 成员已经被替换为 ch_layout 结构体，这是为了支持更全面的声道布局信息。
+        std::cout << "channel layout: " << as->codecpar->ch_layout.u.mask << std::endl;
+        std::cout << "number of channels: " << as->codecpar->ch_layout.nb_channels << std::endl;
+        // 获取解码器名称
+        std::cout << "codec_id: " << avcodec_get_name(as->codecpar->codec_id) << std::endl; 
+        // 一帧数据：单通道的样本数 fps = sample_rate / frame_size   样本率：每秒采集的样本数 帧大小：每帧的样本数
+        std::cout << "frame_size: " << as->codecpar->frame_size << std::endl;
+    } else {
+        qDebug() << "未找到音频流";
+    }
 
     return true;
 }
+
 // 空间需要调用者释放，释放AVPacket对象空间，和数据空间 av_packet_free
 AVPacket* XDemux::Read()
 {
@@ -185,15 +191,14 @@ void XDemux::Close()
     if(!ic_) return;
     avformat_close_input(&ic_);
 }
-
 bool XDemux::isAudio(AVPacket *pkt)
 {
-    if(!pkt) return false;
+    if(!pkt || audioStream_ < 0) return false;
     return pkt->stream_index == audioStream_;
 }
 
 bool XDemux::isVideo(AVPacket *pkt)
 {
-    if(!pkt) return false;
+    if(!pkt || videoStream_ < 0) return false;
     return pkt->stream_index == videoStream_;
 }
