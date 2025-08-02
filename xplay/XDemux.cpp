@@ -83,6 +83,34 @@ bool XDemux::Open(const char *url)
         std::cout << "codec_id: " << avcodec_get_name(as->codecpar->codec_id) << std::endl; 
         // 帧率 fps, 分数转换
         std::cout << "av_frame_rate: " << av_q2d(as->avg_frame_rate) << std::endl;
+  
+    
+        switch (as->codecpar->format) {
+            case AV_PIX_FMT_YUV420P:
+                std::cout << "pixel format name: AV_PIX_FMT_YUV420P" << std::endl;
+                break;
+            case AV_PIX_FMT_YUV422P:
+                std::cout << "pixel format name: AV_PIX_FMT_YUV422P" << std::endl;
+                break;
+            case AV_PIX_FMT_YUV444P:
+                std::cout << "pixel format name: AV_PIX_FMT_YUV444P" << std::endl;
+                break;
+            case AV_PIX_FMT_NV12:
+                std::cout << "pixel format name: AV_PIX_FMT_NV12" << std::endl;
+                break;
+            case AV_PIX_FMT_NV21:
+                std::cout << "pixel format name: AV_PIX_FMT_NV21" << std::endl;
+                break;
+            case AV_PIX_FMT_RGB24:
+                std::cout << "pixel format name: AV_PIX_FMT_RGB24" << std::endl;
+                break;
+            case AV_PIX_FMT_BGR24:
+                std::cout << "pixel format name: AV_PIX_FMT_BGR24" << std::endl;
+                break;
+            default:
+                std::cout << "pixel format name: Unknown or unsupported format" << std::endl;
+                break;
+        }
     } else {
         qDebug() << "未找到视频流";
     }

@@ -22,7 +22,7 @@ public:
 
     void Init(){
         char *url;
-        url = "yq.mp4";
+        url = "hm.mp4";
         // 解封装器
         if (!demux.Open(url)){
             qDebug() << "打开文件失败:" << url;
@@ -91,13 +91,13 @@ public:
             }
 
             // nullptr error?
-            std::cout << "pkt_ptr:" << pkt;
+            // std::cout << "pkt_ptr:" << pkt;
             // av_packet_free(&pkt);
 
             if (!pkt)
                 break;
 
-            msleep(1000/60);
+            msleep(1000/30);
         }
     }
     // 解封装

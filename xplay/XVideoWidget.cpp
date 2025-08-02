@@ -34,27 +34,29 @@ const char* vString = GET_STR(
     }
 );
 
-// 片元shader
+// 片元shader - 使用完整转换矩阵处理泛白问题
 const char* tString = GET_STR(
-    varying highp vec2 textureOut; // 输入：插值后的纹理坐标
-    uniform sampler2D tex_y;       // Y 分量纹理
-    uniform sampler2D tex_u;       // U 分量纹理
-    uniform sampler2D tex_v;       // V 分量纹理
+    varying highp vec2 textureOut;
+    uniform sampler2D tex_y;
+    uniform sampler2D tex_u;
+    uniform sampler2D tex_v;
 
     void main() {
-        vec3 yuv;
-        vec3 rgb;
-        // 从 YUV 纹理采样
-        yuv.x = texture2D(tex_y, textureOut).r;      // Y分量：0.0~1.0
-        yuv.y = texture2D(tex_u, textureOut).r - 0.5; // U分量归一化：-0.5~0.5
-        yuv.z = texture2D(tex_v, textureOut).r - 0.5; // V分量归一化：-0.5~0.5
-        // YUV 转 RGB（BT.601 标准）
-        rgb = mat3(
-            1.0,   1.0,    1.0,
-            0.0,   -0.39465, 2.03211,
-            1.13983, -0.58060, 0.0
-        ) * yuv;
-        gl_FragColor = vec4(rgb, 1.0); // 输出 RGBA 颜色
+        float y = texture2D(tex_y, textureOut).r;
+        float u = texture2D(tex_u, textureOut).r;
+        float v = texture2D(tex_v, textureOut).r;
+        
+        // 处理limited range YUV 如果Y分量的范围没有正确从limited range(16-235)转换到full range(0-255)，会导致整体亮度偏高
+        y = 1.1643 * (y - 0.0625);
+        u = u - 0.5;
+        v = v - 0.5;
+        
+        // YUV到RGB转换
+        float r = y + 1.5958 * v;
+        float g = y - 0.3917 * u - 0.8129 * v;
+        float b = y + 2.017 * u;
+        
+        gl_FragColor = vec4(r, g, b, 1.0);
     }
 );
 
@@ -128,6 +130,14 @@ void XVideoWidget::Repaint(AVFrame *frame)
     if(!datas[0] || this->width_*height_ == 0 || frame->width != width_ || frame->height != height_){
         return;
     }
+
+
+    // 检查像素格式是否为YUV420P
+    if (frame->format != AV_PIX_FMT_YUV420P) {
+        qDebug() << "Warning: Frame format is not YUV420P:" << frame->format;
+        // 可能需要进行格式转换
+    }
+
     // 行对齐问题
     // 修复行对齐问题 - 正确处理frame的linesize
     // Y平面
