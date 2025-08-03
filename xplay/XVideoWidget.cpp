@@ -34,7 +34,7 @@ const char* vString = GET_STR(
     }
 );
 
-// 片元shader - 使用完整转换矩阵处理泛白问题
+// 片元shader
 const char* tString = GET_STR(
     varying highp vec2 textureOut;
     uniform sampler2D tex_y;
@@ -46,7 +46,6 @@ const char* tString = GET_STR(
         float u = texture2D(tex_u, textureOut).r;
         float v = texture2D(tex_v, textureOut).r;
         
-        // 处理limited range YUV 如果Y分量的范围没有正确从limited range(16-235)转换到full range(0-255)，会导致整体亮度偏高
         y = 1.1643 * (y - 0.0625);
         u = u - 0.5;
         v = v - 0.5;

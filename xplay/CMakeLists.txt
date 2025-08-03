@@ -22,6 +22,8 @@ set(PROJECT_SOURCES
         XDemux.h
         XVideoWidget.cpp
         XVideoWidget.h
+        XResample.cpp
+        XResample.h
 )
 # 头文件目录
 include_directories(${PROJECT_SOURCE_DIR})
@@ -100,6 +102,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
         avformat
         avutil
         swscale
+        swresample
 )
 
 # 如果需要控制台输出，添加以下行

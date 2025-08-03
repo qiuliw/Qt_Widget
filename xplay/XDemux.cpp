@@ -152,7 +152,7 @@ AVPacket* XDemux::Read()
     // dts转为毫秒
     pkt->dts = pkt->dts * av_q2d(ic_->streams[pkt->stream_index]->time_base) * 1000;
 
-    qDebug() << "pkt->pts:" << pkt->pts << "pkt->dts:" << pkt->dts;
+    qDebug() << "XDemux pkt->pts:" << pkt->pts << "pkt->dts:" << pkt->dts;
     
     return pkt;
 }

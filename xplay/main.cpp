@@ -10,6 +10,7 @@
 #include <qdebug.h>
 #include <Qthread.h>
 #include <qlogging.h>
+#include "XResample.h"
 
 extern "C"{
     #include <libavutil/frame.h>
@@ -34,6 +35,9 @@ public:
         // 解码器
         adec.Open(demux.CopyAPara());
         vdec.Open(demux.CopyVPara());
+        // 音频重采样
+        resample.Open(demux.CopyAPara());
+
     }
 
     void run() override
@@ -44,6 +48,8 @@ public:
         Read 返回 nullptr 以后，向解码器 send(nullptr) 以进入 flush 模式。
         一次 send 之后，循环 recv 直到返回 nullptr（“一次 send，多次 recv”）。
         */
+
+        unsigned char *pcm = new unsigned char[1024 * 1024];
 
         for (;;)
         {
@@ -85,19 +91,24 @@ public:
                 {
                     AVFrame *frame = adec.Recv();
                     if (!frame) break;
+                    int re =resample.Resample(frame, pcm);
+
+                    std::cout << "resample:" << re;
                     // audio->Play(frame);
                     av_frame_free(&frame);
                 }
             }
 
-            // nullptr error?
-            // std::cout << "pkt_ptr:" << pkt;
-            // av_packet_free(&pkt);
+            
 
             if (!pkt)
                 break;
 
-            msleep(1000/30);
+            // nullptr error?
+            // std::cout << "pkt_ptr:" << pkt;
+            // av_packet_free(&pkt);
+
+            msleep(30);
         }
     }
     // 解封装
@@ -105,6 +116,9 @@ public:
     // 解码
     XDecode adec;
     XDecode vdec;
+    // 音频重采样
+    XResample resample;
+
     XVideoWidget *video; // 必须在QApplication之后创建
 };
 
