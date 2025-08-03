@@ -38,6 +38,9 @@ public:
     bool isAudio(AVPacket *pkt);
     bool isVideo(AVPacket *pkt);
 
+    // 同步
+    double GetVideoFPS();
+
     int totalMs_ = 0;
     int width_ = 0;
     int height_ = 0;

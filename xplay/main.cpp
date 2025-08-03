@@ -5,12 +5,11 @@
 
 #include <QApplication>
 #include <iostream>
-
-#include <ostream>
 #include <qdebug.h>
-#include <Qthread.h>
+#include <QThread>
 #include <qlogging.h>
 #include "XResample.h"
+#include "XAudioPlay.h"
 
 extern "C"{
     #include <libavutil/frame.h>
@@ -19,124 +18,128 @@ extern "C"{
 
 class TestThread : public QThread{
 public:
-    TestThread(QObject *parent = nullptr) : QThread(parent) {}
+    TestThread(QObject *parent = nullptr) : QThread(parent), video_fps_(25.0) {}
 
     void Init(){
-        char *url;
-        url = "hm.mp4";
-        // 解封装器
+        char *url = "hm.mp4";
+        // 解封装器初始化
         if (!demux.Open(url)){
             qDebug() << "打开文件失败:" << url;
             return;
         }
         qDebug() << "打开文件成功:" << url;
-        // demux.Seek(0.9);
 
-        // 解码器
+        // 解码器初始化
         adec.Open(demux.CopyAPara());
         vdec.Open(demux.CopyVPara());
-        // 音频重采样
+        // 音频重采样初始化
         resample.Open(demux.CopyAPara());
+        
+        // 音频播放器初始化
+        ap = XAudioPlay::Get();
 
+        // 获取视频帧率并计算帧间隔
+        video_fps_ = demux.GetVideoFPS();
+        if (video_fps_ <= 0) {
+            video_fps_ = 25.0;
+            qWarning() << "无法获取视频帧率，使用默认值25fps";
+        }
+        frame_interval_ms_ = qRound(1000.0 / video_fps_);
+        qDebug() << "视频帧率:" << video_fps_ << "，每帧间隔:" << frame_interval_ms_ << "ms";
     }
 
     void run() override
     {
-
-        /*
-        边 send 边 recv（同步流水线，不一次性全部 send）。
-        Read 返回 nullptr 以后，向解码器 send(nullptr) 以进入 flush 模式。
-        一次 send 之后，循环 recv 直到返回 nullptr（“一次 send，多次 recv”）。
-        */
+        ap->Init(); // 在子线程中初始化音频设备
 
         unsigned char *pcm = new unsigned char[1024 * 1024];
-
+        
         for (;;)
         {
-            // 1. 读包（读到 EOF 后 pkt == nullptr）
+            // 1. 读取数据包
             AVPacket *pkt = demux.Read();
+            bool is_eof =! pkt; // 判断是否读到文件末尾
 
-            // 2. 根据流类型 send 到对应解码器
+            // 2. 根据流类型分发到对应解码器
             XDecode *dec = nullptr;
             if (pkt && demux.isVideo(pkt))
                 dec = &vdec;
             else if (pkt)
                 dec = &adec;
 
-            if (dec)
-                dec->Send(pkt);   // 正常包
-
-            // 3. 读完文件后，向两个解码器各发一次 nullptr 进入 flush
-            if (!pkt)
-            {
-                vdec.Send(nullptr);
-                adec.Send(nullptr);
+            if (dec) {
+                dec->Send(pkt);
             }
 
-            // 4. 对应解码器“只 recv，不再次 send”，直到没帧
-            if (dec == &vdec || !pkt)   // 视频解码器或 flush 阶段
-            {
-                for (;;)
-                {
+            // 3. 文件末尾时，向解码器发送空包触发flush
+            if (is_eof) {
+                vdec.Send(nullptr); // 视频解码器flush
+                adec.Send(nullptr); // 音频解码器flush
+            }
+
+            // 4. 处理视频帧（一次send，多次recv直到无帧）
+            if (dec == &vdec || is_eof) {
+                while (true) {
                     AVFrame *frame = vdec.Recv();
-                    if (!frame) break;
+                    if (!frame) break; // 无更多帧，退出循环
+                    
                     video->Repaint(frame);
                     av_frame_free(&frame);
+                    msleep(frame_interval_ms_); // 按帧率休眠
                 }
             }
 
-            if (dec == &adec || !pkt)   // 音频解码器或 flush 阶段
-            {
-                for (;;)
-                {
+            // 5. 处理音频帧（一次send，多次recv直到无帧）
+            if (dec == &adec || is_eof) {
+                while (true) {
                     AVFrame *frame = adec.Recv();
-                    if (!frame) break;
-                    int re =resample.Resample(frame, pcm);
-
-                    std::cout << "resample:" << re;
-                    // audio->Play(frame);
+                    if (!frame) break; // 无更多帧，退出循环
+                    
+                    int re = resample.Resample(frame, pcm);
+                    if (re > 0 && ap->GetFree() >= re) {
+                        ap->Play(pcm, re);
+                    }
                     av_frame_free(&frame);
                 }
             }
 
-            
+            // 6. 释放数据包（修复崩溃：在所有解码完成后再释放）
+            // if (pkt) {
+            //     av_packet_free(&pkt);
+            // }
 
-            if (!pkt)
+            // 7. 文件末尾，退出主循环
+            if (is_eof) {
                 break;
-
-            // nullptr error?
-            // std::cout << "pkt_ptr:" << pkt;
-            // av_packet_free(&pkt);
-
-            msleep(30);
+            }
         }
+
+        // 释放资源
+        delete[] pcm;
+        qDebug() << "播放完成";
     }
-    // 解封装
-    XDemux demux;
-    // 解码
-    XDecode adec;
-    XDecode vdec;
-    // 音频重采样
-    XResample resample;
 
-    XVideoWidget *video; // 必须在QApplication之后创建
+    // 成员变量
+    double video_fps_;       // 视频帧率
+    int frame_interval_ms_;  // 帧间隔毫秒数
+    XDemux demux;            // 解封装器
+    XDecode adec;            // 音频解码器
+    XDecode vdec;            // 视频解码器
+    XResample resample;      // 音频重采样
+    XAudioPlay *ap = nullptr;// 音频播放器
+    XVideoWidget *video = nullptr; // 视频渲染组件
 };
-
 
 int main(int argc, char *argv[])
 {
-
-    // 设置FFmpeg日志级别（只显示错误和致命错误）
-    av_log_set_level(AV_LOG_ERROR);
-
-    TestThread tt; // 解码测试
-    tt.Init();
+    av_log_set_level(AV_LOG_ERROR); // 设置FFmpeg日志级别
 
     QApplication a(argc, argv);
     Widget w;
     w.show();
 
-    // 初始化gl宽高
+    TestThread tt;
+    tt.Init();
     w.videoWidget->Init(tt.demux.width_, tt.demux.height_);
     tt.video = w.videoWidget;
     tt.start();

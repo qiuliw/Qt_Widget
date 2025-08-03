@@ -230,3 +230,11 @@ bool XDemux::isVideo(AVPacket *pkt)
     if(!pkt || videoStream_ < 0) return false;
     return pkt->stream_index == videoStream_;
 }
+
+double XDemux::GetVideoFPS()
+{
+    if (ic_ == nullptr || videoStream_ < 0) return 0.0;
+    AVStream *stream = ic_->streams[videoStream_];
+    // 计算帧率：av_q2d将AVRational（分数）转换为double
+    return av_q2d(stream->avg_frame_rate); 
+}
