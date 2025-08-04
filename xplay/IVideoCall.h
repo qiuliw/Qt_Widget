@@ -2,6 +2,7 @@
 
 class AVFrame;
 
+// 图像显示接口
 class IVideoCall
 {
 public:
