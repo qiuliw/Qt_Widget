@@ -26,6 +26,8 @@ set(PROJECT_SOURCES
         XResample.h
         XAudioPlay.cpp
         XAudioPlay.h
+        XAudioThread.cpp
+        XAudioThread.h
 )
 # 头文件目录
 include_directories(${PROJECT_SOURCE_DIR})

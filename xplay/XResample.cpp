@@ -39,7 +39,7 @@ int XResample::Resample(AVFrame *in,unsigned char *out)
 
 
 // 输出参数和输入参数一致除了采样格式，输出为S16。会释放para
-bool XResample::Open(AVCodecParameters *para)
+bool XResample::Open(AVCodecParameters *para,bool destroyPara)
 {
     if(!para) return false;
     
@@ -65,7 +65,8 @@ bool XResample::Open(AVCodecParameters *para)
     );
 
     // 释放para
-    avcodec_parameters_free(&para);
+    if(destroyPara)
+        avcodec_parameters_free(&para);
     
     if (!swr_ctx_ || ret < 0) {
         char err_buf[1024] = {0};

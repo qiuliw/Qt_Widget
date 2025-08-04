@@ -22,7 +22,7 @@ public:
     virtual int Resample(AVFrame *in,unsigned char *out);
 
     // 输出参数和输入参数一致除了采样格式，输出为S16
-    virtual bool Open(AVCodecParameters *para);
+    virtual bool Open(AVCodecParameters *para,bool destroyPara = true);
     virtual void Close();
 
 protected:

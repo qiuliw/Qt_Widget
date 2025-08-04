@@ -1,3 +1,4 @@
+#include "XAudioThread.h"
 #include "XDecode.h"
 #include "XDemux.h"
 #include "XVideoWidget.h"
@@ -50,10 +51,9 @@ public:
 
     void run() override
     {
-        ap->Init(); // 在子线程中初始化音频设备
-
-        unsigned char *pcm = new unsigned char[1024 * 1024];
-        
+        XAudioThread at;
+        at.Open(demux.CopyAPara());  
+        at.start();     
         for (;;)
         {
             // 1. 读取数据包
@@ -67,41 +67,44 @@ public:
             else if (pkt)
                 dec = &adec;
 
-            if (dec) {
+            if (dec == &vdec) {
                 dec->Send(pkt);
-            }
-
-            // 3. 文件末尾时，向解码器发送空包触发flush
-            if (is_eof) {
-                vdec.Send(nullptr); // 视频解码器flush
-                adec.Send(nullptr); // 音频解码器flush
-            }
-
-            // 4. 处理视频帧（一次send，多次recv直到无帧）
-            if (dec == &vdec || is_eof) {
                 while (true) {
                     AVFrame *frame = vdec.Recv();
                     if (!frame) break; // 无更多帧，退出循环
                     
                     video->Repaint(frame);
                     av_frame_free(&frame);
-                    msleep(frame_interval_ms_); // 按帧率休眠
+                    msleep(frame_interval_ms_); // 按帧率休眠。但会影响音频的播放。相当于强迫音频也在这里休眠后去处理，导致音频解码不及时
                 }
             }
+            if(dec == &adec){
+                at.Push(pkt); // 阻塞，音频播放线程的阻塞可能连带主线程阻塞
+            }
+            
+
+            // // 3. 文件末尾时，向解码器发送空包触发flush
+            // if (is_eof) {
+            //     vdec.Send(nullptr); // 视频解码器flush
+            //     adec.Send(nullptr); // 音频解码器flush
+            // }
+
+            // 4. 处理视频帧（一次send，多次recv直到无帧）
+                
 
             // 5. 处理音频帧（一次send，多次recv直到无帧）
-            if (dec == &adec || is_eof) {
-                while (true) {
-                    AVFrame *frame = adec.Recv();
-                    if (!frame) break; // 无更多帧，退出循环
+            // if (dec == &adec || is_eof) {
+            //     // while (true) {
+            //     //     AVFrame *frame = adec.Recv();
+            //     //     if (!frame) break; // 无更多帧，退出循环
                     
-                    int re = resample.Resample(frame, pcm);
-                    if (re > 0 && ap->GetFree() >= re) {
-                        ap->Play(pcm, re);
-                    }
-                    av_frame_free(&frame);
-                }
-            }
+            //     //     int re = resample.Resample(frame, pcm);
+            //     //     if (re > 0 && ap->GetFree() >= re) {
+            //     //         ap->Play(pcm, re);
+            //     //     }
+            //     //     av_frame_free(&frame);
+            //     // }
+            // }
 
             // 6. 释放数据包（修复崩溃：在所有解码完成后再释放）
             // if (pkt) {
@@ -111,11 +114,11 @@ public:
             // 7. 文件末尾，退出主循环
             if (is_eof) {
                 break;
+                at.isExit_ = true;
             }
         }
 
         // 释放资源
-        delete[] pcm;
         qDebug() << "播放完成";
     }
 

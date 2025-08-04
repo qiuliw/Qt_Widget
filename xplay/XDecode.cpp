@@ -31,7 +31,7 @@ XDecode::~XDecode()
     
 }
 // 打开解码器
-bool XDecode::Open(AVCodecParameters *para)
+bool XDecode::Open(AVCodecParameters *para,bool destroyPara)
 {
     if(!para) return false;
     
@@ -57,7 +57,9 @@ bool XDecode::Open(AVCodecParameters *para)
         av_strerror(re, buf, sizeof(buf)-1);
         qDebug() << "avcodec_open2 failed: " << buf;
 
-        avcodec_parameters_free(&para);
+        if(destroyPara){
+            avcodec_parameters_free(&para);
+        }
         avcodec_free_context(&codecCtx_);
 
         return false;
