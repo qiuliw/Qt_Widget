@@ -1,5 +1,6 @@
 #pragma once
 
+#include "IVideoCall.h"
 #include <QtOpenGL/qopenglshaderprogram.h>
 #include <QtOpenGLWidgets/QOpenGLWidget>
 #include <QOpenGLFunctions>
@@ -7,7 +8,7 @@
 
 class AVFrame;
 
-class XVideoWidget : public QOpenGLWidget, protected QOpenGLFunctions
+class XVideoWidget : public QOpenGLWidget, protected QOpenGLFunctions, public IVideoCall
 {
     Q_OBJECT
 
@@ -15,9 +16,9 @@ public:
     XVideoWidget(QWidget *parent = nullptr);
     ~XVideoWidget();
     // 初始化材质内存与材质原始宽高，每次渲染时从frame读入材质
-    void Init(int w, int h);
+    void Init(int width, int height) override;
     // 不管成功与否都释放掉frame空间
-    virtual void Repaint(AVFrame *frame);// 画面重绘
+    virtual void Repaint(AVFrame *frame) override;// 画面重绘
 protected:
     void initializeGL() override;
     void paintGL() override;

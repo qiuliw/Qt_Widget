@@ -71,12 +71,12 @@ XVideoWidget::~XVideoWidget()
 }
 
 // 初始化材质内存与材质原始宽高，每次渲染时从文件读入材质
-void XVideoWidget::Init(int w, int h)
+void XVideoWidget::Init(int width, int height)
 {
     std::lock_guard<std::mutex> lk(mtx_);
 
-    this->width_ = w;
-    this->height_ = h;
+    this->width_ = width;
+    this->height_ = height;
 
     for(int i = 0; i < 3; i++){
         if(datas[i]){

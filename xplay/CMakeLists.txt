@@ -28,6 +28,9 @@ set(PROJECT_SOURCES
         XAudioPlay.h
         XAudioThread.cpp
         XAudioThread.h
+        XVideoThread.cpp
+        XVideoThread.h
+        IVideoCall.h
 )
 # 头文件目录
 include_directories(${PROJECT_SOURCE_DIR})

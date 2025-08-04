@@ -1,6 +1,7 @@
 #include "XAudioThread.h"
 #include "XDecode.h"
 #include "XDemux.h"
+#include "XVideoThread.h"
 #include "XVideoWidget.h"
 #include "widget.h"
 
@@ -54,6 +55,9 @@ public:
         XAudioThread at;
         at.Open(demux.CopyAPara());  
         at.start();     
+        XVideoThread vt;
+        vt.Open(demux.CopyVPara(),video);
+        vt.start();
         for (;;)
         {
             // 1. 读取数据包
@@ -68,15 +72,7 @@ public:
                 dec = &adec;
 
             if (dec == &vdec) {
-                dec->Send(pkt);
-                while (true) {
-                    AVFrame *frame = vdec.Recv();
-                    if (!frame) break; // 无更多帧，退出循环
-                    
-                    video->Repaint(frame);
-                    av_frame_free(&frame);
-                    msleep(frame_interval_ms_); // 按帧率休眠。但会影响音频的播放。相当于强迫音频也在这里休眠后去处理，导致音频解码不及时
-                }
+                vt.Push(pkt);
             }
             if(dec == &adec){
                 at.Push(pkt); // 阻塞，音频播放线程的阻塞可能连带主线程阻塞
@@ -130,7 +126,7 @@ public:
     XDecode vdec;            // 视频解码器
     XResample resample;      // 音频重采样
     XAudioPlay *ap = nullptr;// 音频播放器
-    XVideoWidget *video = nullptr; // 视频渲染组件
+    XVideoWidget *video = nullptr;
 };
 
 int main(int argc, char *argv[])
