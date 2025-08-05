@@ -73,3 +73,8 @@ void XDecodeThread::Clear()
         decode_->Clear();
 }
 
+void XDecodeThread::SetPause(bool isPause)
+{
+    isPause_ = isPause;
+}
+

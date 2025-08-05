@@ -3,6 +3,7 @@
 #include "IVideoCall.h"
 #include "XVideoWidget.h"
 #include <QThread>
+#include <atomic>
 #include <mutex>
 #include <QAudioSink>
 #include <queue>
@@ -25,6 +26,7 @@ public:
     virtual void Push(AVPacket *pkt); // 阻塞
     virtual AVPacket *Pop();
     virtual void Clear();
+    virtual void SetPause(bool isPause);
     std::atomic<bool> isExit_ = false;
 protected:
     std::list<AVPacket*> packets_;
@@ -32,5 +34,6 @@ protected:
     int maxList_ = 100; // 最大缓存个数限制
     std::condition_variable cv_;
     XDecode *decode_ = nullptr;
+    std::atomic<bool> isPause_ = false;
 };
 

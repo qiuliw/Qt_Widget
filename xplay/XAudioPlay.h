@@ -15,7 +15,8 @@ public:
     virtual bool Open(int sampleRate = 44100, int channels = 2, QAudioFormat::SampleFormat sampleFormat = QAudioFormat::Int16);
     void InitSink(); // sink必须在播放线程中初始化
     virtual bool Play(unsigned char *data, int len) ;
-    virtual void Stop() ;
+    virtual void Stop();
+    virtual void Pause(bool isPause = true);
     virtual void SetVolume(float volume) ;
     virtual int GetState();
     virtual int GetFree();

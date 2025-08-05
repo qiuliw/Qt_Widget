@@ -2,6 +2,7 @@
 
 #include "IVideoCall.h"
 #include <QThread>
+#include <atomic>
 #include <cstddef>
 #include <mutex>
 
@@ -22,6 +23,10 @@ public:
     void Clear();
     // 启动所有线程
     virtual void Start();
+    // 暂停/恢复播放
+    void SetPause(bool isPause);
+    bool IsPaused();
+    
     long long pts_ = 0;
     long long totalMs_ = 0;
 private:
@@ -29,5 +34,6 @@ private:
     XVideoThread *vt_ = nullptr;
     XAudioThread *at_ = nullptr;
     bool isExit_ = false;
+    std::atomic<bool> isPause_ = false;
     std::mutex mtx_;
 };

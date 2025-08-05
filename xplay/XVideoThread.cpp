@@ -31,6 +31,11 @@ void XVideoThread::run()
     auto pcm = std::make_unique<unsigned char[]>(1024 * 1024 * 10);
     while (!isExit_) {
 
+        if(isPause_){
+            msleep(5);
+            continue;
+        }
+
         AVPacket *pkt = Pop();
         if(!pkt){
             msleep(1);
@@ -52,6 +57,11 @@ void XVideoThread::run()
         }
         // 一次send 多次recv
         while(!isExit_){
+            if(isPause_){
+                msleep(5);
+                continue;
+            }
+
             AVFrame *frame = decode_->Recv();
             if(!frame) break;
 

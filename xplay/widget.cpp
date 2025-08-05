@@ -28,6 +28,11 @@ Widget::Widget(QWidget *parent)
     openFileBtn->move(10, 10);
     connect(openFileBtn,&QPushButton::clicked,this,&Widget::OpenFile);
 
+    // 添加暂停按钮
+    playPauseBtn = new QPushButton("暂停", this);
+    playPauseBtn->move(100, 10);
+    playPauseBtn->setEnabled(false);  // 初始时不可用
+    connect(playPauseBtn, &QPushButton::clicked, this, &Widget::PlayOrPause);
 
     // 创建滑动条作为进度条
     slider = new QSlider(Qt::Horizontal, this);
@@ -57,6 +62,7 @@ void Widget::resizeEvent(QResizeEvent *event)
         slider->setGeometry(0, height() - 20, width(), 30);
     }
 }
+
 // 设置视频显示位置和大小
 void Widget::updateVideoGeometry()
 {
@@ -105,6 +111,9 @@ void Widget::OpenFile()
     videoOrgWidth = videoWidget->Width();
     videoOrgHeight = videoWidget->Height();
     updateVideoGeometry();
+    
+    // 文件打开成功后启用暂停按钮
+    playPauseBtn->setEnabled(true);
 }
 
 
@@ -133,7 +142,10 @@ void Widget::timerEvent(QTimerEvent *e){
     long long total = dt->totalMs_;
     if(total > 0){
         double pos = (double)dt->pts_ / (double)total;
-        slider->setValue(pos * 1000);
+        // 确保进度条值在合理范围内，当播放结束时能到达末尾
+        int sliderValue = pos * 1000;
+        if (sliderValue > 1000) sliderValue = 1000;
+        slider->setValue(sliderValue);
     }
 }
 
@@ -144,4 +156,25 @@ void Widget::mouseDoubleClicked(QMouseEvent *event)
         this->showNormal();
     else
         this->showFullScreen(); 
+}
+
+void Widget::mouseClicked(QMouseEvent *event)
+{
+    
+}
+
+// 暂停/播放按钮处理函数
+void Widget::PlayOrPause()
+{
+    if (!dt) return;
+    
+    bool isPaused = dt->IsPaused();
+    dt->SetPause(!isPaused);
+    
+    // 更新按钮文本
+    if (isPaused) {
+        playPauseBtn->setText("暂停");
+    } else {
+        playPauseBtn->setText("播放");
+    }
 }

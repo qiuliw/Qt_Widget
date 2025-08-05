@@ -29,7 +29,13 @@ public slots:
     void SliderReleased();
     void SliderMoved(int value);
     void timerEvent(QTimerEvent *e);
+    // 双击全屏
     void mouseDoubleClicked(QMouseEvent *event);
+    // 单击暂停
+    void mouseClicked(QMouseEvent *event);
+    // 按钮暂停/播放
+    void PlayOrPause();
+    
 private:
 
     void updateVideoGeometry();
@@ -37,6 +43,7 @@ private:
     int videoOrgHeight = 0;
 
     QPushButton *openFileBtn;
+    QPushButton *playPauseBtn;  // 添加暂停按钮
     QSlider *slider;
     bool isSliderPressed = false;
 };

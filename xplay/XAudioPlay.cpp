@@ -117,6 +117,20 @@ void XAudioPlay::Stop() {
     device_ = QAudioDevice();
 }
 
+void XAudioPlay::Pause(bool isPause)
+{
+    std::lock_guard<std::mutex> lk(mtx_);
+    if (audio_sink_) {
+        if (isPause) {
+            // 暂停音频播放但不清空缓冲区
+            audio_sink_->suspend();
+        } else {
+            // 恢复音频播放
+            audio_sink_->resume();
+        }
+    }
+}
+
 void XAudioPlay::SetVolume(float volume) {
 
     std::lock_guard<std::mutex> lk(mtx_);

@@ -38,6 +38,12 @@ void XDemuxThread::run()
             msleep(5);
             continue;
         }
+        
+        // 处理暂停逻辑
+        if(isPause_) {
+            msleep(5);
+            continue;
+        }
 
         if(vt_&&at_){
            vt_->synpts_ = at_->pts_;
@@ -61,6 +67,7 @@ void XDemuxThread::run()
         }
     }
 }
+
 bool XDemuxThread::Open(const char *url,IVideoCall *call)
 {
     if(url==0 || url[0]==0){
@@ -69,6 +76,7 @@ bool XDemuxThread::Open(const char *url,IVideoCall *call)
     
     // 先关闭之前的资源
     Clear();
+    SetPause(false);
 
     std::lock_guard<std::mutex> lk(mtx_);
     if(!demux_){
@@ -114,17 +122,16 @@ void XDemuxThread::Clear()
         demux_->Close();
     }
 }
+
 void XDemuxThread::Start()
 {
-    {
-        std::lock_guard<std::mutex> lk(mtx_);
-        if(!demux_){
-            demux_ = new XDemux();
-        }
-        if(!vt_) vt_ = new XVideoThread();
-        if(!at_) at_ = new XAudioThread();
+    std::lock_guard<std::mutex> lk(mtx_);
+    if(!demux_){
+        demux_ = new XDemux();
     }
-    
+    if(!vt_) vt_ = new XVideoThread();
+    if(!at_) at_ = new XAudioThread();
+
     vt_->start();
     at_->start();
 
@@ -133,3 +140,18 @@ void XDemuxThread::Start()
     
 }
 
+void XDemuxThread::SetPause(bool isPause) 
+{
+    isPause_ = isPause;
+    
+    std::lock_guard<std::mutex> lk(mtx_);
+
+    // 同步设置音频和视频线程的暂停状态
+    if(at_) at_->SetPause(isPause);
+    if(vt_) vt_->SetPause(isPause);
+}
+
+bool XDemuxThread::IsPaused() 
+{
+    return isPause_;
+}

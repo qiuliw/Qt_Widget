@@ -29,6 +29,11 @@ void XAudioThread::run() {
     auto pcm = std::make_unique<unsigned char[]>(1024 * 1024 * 10);
     while (!isExit_) {
         
+        if(isPause_){
+            msleep(5);
+            continue;
+        }
+
         AVPacket *pkt = Pop();
         
         if(!pkt){
@@ -50,6 +55,11 @@ void XAudioThread::run() {
         }
         // 一次send 多次recv
         while(!isExit_){
+            if(isPause_){
+                msleep(5);
+                continue;
+            }
+
             AVFrame *frame = decode_->Recv();
             if(!frame) break;
             // 计算当前正在播放的音频时间戳
@@ -108,5 +118,15 @@ bool XAudioThread::Open(AVCodecParameters *para,int sampleRate, int channels, QA
     std::cout << "XAudioThread open success" << std::endl;
 
     return true;
+}
+
+void XAudioThread::SetPause(bool isPause)
+{
+    std::lock_guard<std::mutex> lk(mtx_);
+    
+    XDecodeThread::SetPause(isPause);
+    if(ap_){
+        ap_->Pause(isPause);
+    }
 }
 
