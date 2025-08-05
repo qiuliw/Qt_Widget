@@ -90,16 +90,31 @@ bool XAudioPlay::Play(unsigned char *data, int len) {
 }
 
 void XAudioPlay::Stop() {
-
     std::lock_guard<std::mutex> lk(mtx_);
 
+    // 如果音频正在播放，先停止播放
     if (audio_sink_) {
+        // 先停止音频播放
         audio_sink_->stop();
+        
+        // 清空缓冲区中的数据（如果可能）
+        if (audio_io_) {
+            // 尝试丢弃缓冲区中的数据
+            audio_io_->reset();
+        }
+        
+        // 删除音频设备对象
         delete audio_sink_;
         audio_sink_ = nullptr;
         audio_io_ = nullptr;
     }
-    is_initialized_ = false;  // 重置初始化状态
+    
+    // 重置初始化状态
+    is_initialized_ = false;
+    
+    // 清空格式和设备信息
+    format_ = QAudioFormat();
+    device_ = QAudioDevice();
 }
 
 void XAudioPlay::SetVolume(float volume) {

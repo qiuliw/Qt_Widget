@@ -3,6 +3,8 @@
 #include "IVideoCall.h"
 #include "XVideoWidget.h"
 #include <QThread>
+#include <atomic>
+#include <cstdint>
 #include <list>
 #include <mutex>
 #include <QAudioSink>
@@ -26,7 +28,6 @@ public:
     void run() override;
     // 打开，不管是否成功都清理para。设置输出参数
     bool Open(AVCodecParameters *para,IVideoCall *call);
-    void Close();
     int64_t synpts_ = 0;
 protected:
     IVideoCall *call_ = nullptr;

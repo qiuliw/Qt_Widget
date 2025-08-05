@@ -53,7 +53,6 @@ void XVideoThread::run()
         // 一次send 多次recv
         while(!isExit_){
             AVFrame *frame = decode_->Recv();
-            int64_t pts = 0;
             if(!frame) break;
 
             // 音视频同步 - 在帧级别进行同步控制
@@ -62,7 +61,9 @@ void XVideoThread::run()
                 long long sleep_ms = (decode_->pts_ - synpts_) / 1000; // 转换为毫秒
                 if (sleep_ms > 100) sleep_ms = 100; // 最多等待100ms
                 if (sleep_ms > 0) {
+                    lk.unlock();
                     msleep(sleep_ms);
+                    lk.lock();
                 }
             }
 
@@ -70,6 +71,7 @@ void XVideoThread::run()
             call_->Repaint(frame);
             av_frame_free(&frame);
         }
+        lk.unlock();
         cv_.notify_one(); // 通知生产者可以继续推数据
     }
 }
@@ -77,7 +79,9 @@ void XVideoThread::run()
 bool XVideoThread::Open(AVCodecParameters *para,IVideoCall *call)
 {
     if(!para) return false;
+    Clear();
     std::lock_guard<std::mutex> lk(mtx_);
+    synpts_ = 0;
     // 初始化显示窗口
     this->call_ = call;
     if(call){
@@ -91,24 +95,4 @@ bool XVideoThread::Open(AVCodecParameters *para,IVideoCall *call)
     }
     std::cout << "XVideoThread::Open() ok" << std::endl;
     return true;
-}
-
-void XVideoThread::Close()
-{
-    std::lock_guard<std::mutex> lk(mtx_);
-    
-    // 清理队列中的数据包
-    while(!packets_.empty()) {
-        AVPacket* pkt = packets_.front();
-        packets_.pop_front();
-        av_packet_free(&pkt);
-    }
-    
-    // 关闭解码器
-    if(decode_) {
-        delete decode_;
-        decode_ = nullptr;
-    }
-    
-    call_ = nullptr;
 }

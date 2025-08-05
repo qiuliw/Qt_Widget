@@ -24,13 +24,13 @@ public:
 
     virtual void Push(AVPacket *pkt); // 阻塞
     virtual AVPacket *Pop();
-
+    virtual void Clear();
     std::atomic<bool> isExit_ = false;
 protected:
     std::list<AVPacket*> packets_;
     std::mutex mtx_;
     int maxList_ = 100; // 最大缓存个数限制
     std::condition_variable cv_;
-    XDecode *decode_;
+    XDecode *decode_ = nullptr;
 };
 

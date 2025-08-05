@@ -21,7 +21,6 @@ XAudioThread::XAudioThread()
 
 XAudioThread::~XAudioThread()
 {
-
 }
 
 
@@ -29,7 +28,6 @@ void XAudioThread::run() {
     
     auto pcm = std::make_unique<unsigned char[]>(1024 * 1024 * 10);
     while (!isExit_) {
-        
         
         AVPacket *pkt = Pop();
         
@@ -45,7 +43,6 @@ void XAudioThread::run() {
 
         std::unique_lock<std::mutex> lk(mtx_);
         bool re = decode_->Send(pkt);
-        // av_packet_free(&pkt); 灾难
         if(!re){
             lk.unlock();
             msleep(1);
@@ -72,6 +69,7 @@ void XAudioThread::run() {
                 break;
             }
         }
+        lk.unlock();
         cv_.notify_one(); // 通知生产者可以继续推数据
     }
 }
@@ -81,8 +79,7 @@ bool XAudioThread::Open(AVCodecParameters *para,int sampleRate, int channels, QA
     if(!para) return false;
     
     // 先清理之前的状态
-    Close();
-
+    Clear();
     std::lock_guard<std::mutex> lk(mtx_);
     pts_ = 0;
     if(!decode_)
@@ -113,29 +110,3 @@ bool XAudioThread::Open(AVCodecParameters *para,int sampleRate, int channels, QA
     return true;
 }
 
-void XAudioThread::Close()
-{
-    std::lock_guard<std::mutex> lk(mtx_);
-    
-    // 清理队列中的数据包
-    while(!packets_.empty()) {
-        AVPacket* pkt = packets_.front();
-        packets_.pop_front();
-        av_packet_free(&pkt);
-    }
-    
-    // 关闭各个组件
-    if(decode_) {
-        delete decode_;
-        decode_ = nullptr;
-    }
-    if(resample_) {
-        delete resample_;
-        resample_ = nullptr;
-    }
-    if(ap_) {
-        ap_->Stop();
-    }
-    
-    pts_ = 0;
-}

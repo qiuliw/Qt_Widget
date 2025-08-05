@@ -17,7 +17,17 @@ XDemuxThread::XDemuxThread()
 XDemuxThread::~XDemuxThread()
 {
     isExit_ = true;
-    Close();
+    Clear();
+    if(vt_) {
+        delete vt_;
+    }
+    if(at_) {
+        delete at_;
+    }
+    if(demux_) {
+        delete demux_;
+    }
+
     wait(); // 对象销毁在主线程，主线程等待子线程结束
 }
 
@@ -57,8 +67,7 @@ bool XDemuxThread::Open(const char *url,IVideoCall *call)
     }    
     
     // 先关闭之前的资源
-    Close();
-    
+    Clear();
 
     std::lock_guard<std::mutex> lk(mtx_);
     if(!demux_){
@@ -82,7 +91,6 @@ bool XDemuxThread::Open(const char *url,IVideoCall *call)
     if(!at_->Open(demux_->CopyAPara())){
         std::cout << "XAudioThread::Open() failed" << std::endl;
         demux_->Close(); // 出错时清理
-        vt_->Close();    // 出错时清理
         return false;
     }
 
@@ -91,15 +99,15 @@ bool XDemuxThread::Open(const char *url,IVideoCall *call)
 }
 
 // 只清理资源
-void XDemuxThread::Close()
+void XDemuxThread::Clear()
 {
     std::lock_guard<std::mutex> lk(mtx_);
     
     if(vt_) {
-        vt_->Close();
+        vt_->Clear();
     }
     if(at_) {
-        at_->Close();
+        at_->Clear();
     }
     if(demux_) {
         demux_->Close();
