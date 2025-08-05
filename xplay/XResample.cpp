@@ -33,7 +33,9 @@ int XResample::Resample(AVFrame *in,unsigned char *out)
         in->data,in->nb_samples
     );
     int bytes_per_sample = av_get_bytes_per_sample(AV_SAMPLE_FMT_S16);
-    return re*in->ch_layout.nb_channels * bytes_per_sample; // 样本数*通道数*采样字节数
+    int size = re*in->ch_layout.nb_channels * bytes_per_sample; // 样本数*通道数*采样字节数
+    av_frame_free(&in);
+    return size;
 }
 
 
