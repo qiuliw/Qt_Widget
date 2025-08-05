@@ -41,6 +41,7 @@ void XDemuxThread::run()
 
         if(vt_&&at_){
            vt_->synpts_ = at_->pts_;
+           pts_ = at_->pts_;
         }
         std::unique_lock<std::mutex> lk(mtx_);
         AVPacket *pkt = demux_->Read();
@@ -81,7 +82,7 @@ bool XDemuxThread::Open(const char *url,IVideoCall *call)
         std::cout << "XDemuxThread::Open() failed" << std::endl;
         return false;
     }
-    
+    totalMs_ = demux_->totalMs_;
     // 打开解码器和处理线程（这些操作也不应该在锁中进行）
     if(!vt_->Open(demux_->CopyVPara(),call)){
         std::cout << "XVideoThread::Open() failed" << std::endl;

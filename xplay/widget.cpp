@@ -1,6 +1,7 @@
 #include "widget.h"
 #include "XVideoWidget.h"
 #include <QVBoxLayout>  // 用于布局管理
+#include <iostream>
 #include <qlogging.h>
 #include <qobject.h>
 #include <qpushbutton.h>
@@ -27,8 +28,19 @@ Widget::Widget(QWidget *parent)
     openFileBtn->move(10, 10);
     connect(openFileBtn,&QPushButton::clicked,this,&Widget::OpenFile);
 
+
+    // 创建滑动条作为进度条
+    slider = new QSlider(Qt::Horizontal, this);
+    slider->setRange(0, 1000);
+    slider->setValue(0);
+    connect(slider, &QSlider::sliderPressed, this, &Widget::SliderPressed);
+    connect(slider, &QSlider::sliderReleased, this, &Widget::SliderReleased);
+    connect(slider, &QSlider::valueChanged, this, &Widget::SliderMoved);
+
     dt = new XDemuxThread();
     dt->Start();
+
+    startTimer(40);
 }
 
 Widget::~Widget() {
@@ -39,6 +51,11 @@ void Widget::resizeEvent(QResizeEvent *event)
 {
     QWidget::resizeEvent(event);
     updateVideoGeometry();
+
+    // 设置进度条位置在窗口底部，宽度占满
+    if (slider) {
+        slider->setGeometry(0, height() - 20, width(), 30);
+    }
 }
 // 设置视频显示位置和大小
 void Widget::updateVideoGeometry()
@@ -88,4 +105,43 @@ void Widget::OpenFile()
     videoOrgWidth = videoWidget->Width();
     videoOrgHeight = videoWidget->Height();
     updateVideoGeometry();
+}
+
+
+void Widget::SliderPressed()
+{
+    isSliderPressed = true;
+}
+
+void Widget::SliderReleased()
+{
+    isSliderPressed = false;
+    // 当用户释放滑块时，跳转到相应位置
+    // dt->Seek(slider->value());
+}
+
+void Widget::SliderMoved(int value)
+{
+    // 当滑块移动时更新显示，但不跳转位置（除非正在拖动）
+    if (isSliderPressed) {
+        // 可以在这里添加拖动时的预览功能
+    }
+    std::cout << "SliderMoved:" << value << std::endl;
+}
+
+void Widget::timerEvent(QTimerEvent *e){
+    long long total = dt->totalMs_;
+    if(total > 0){
+        double pos = (double)dt->pts_ / (double)total;
+        slider->setValue(pos * 1000);
+    }
+}
+
+// 双击全屏
+void Widget::mouseDoubleClicked(QMouseEvent *event)
+{
+    if(isFullScreen())
+        this->showNormal();
+    else
+        this->showFullScreen(); 
 }

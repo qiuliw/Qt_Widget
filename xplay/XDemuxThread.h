@@ -22,8 +22,8 @@ public:
     void Clear();
     // 启动所有线程
     virtual void Start();
-
-
+    long long pts_ = 0;
+    long long totalMs_ = 0;
 private:
     XDemux *demux_ = nullptr;
     XVideoThread *vt_ = nullptr;

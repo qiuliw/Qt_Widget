@@ -7,6 +7,7 @@
 #include <QPushButton>
 #include <qpushbutton.h>
 #include <qtmetamacros.h>
+#include <QSlider>
 
 class XDemuxThread;
 
@@ -24,6 +25,11 @@ protected:
 
 public slots:
     void OpenFile();
+    void SliderPressed();
+    void SliderReleased();
+    void SliderMoved(int value);
+    void timerEvent(QTimerEvent *e);
+    void mouseDoubleClicked(QMouseEvent *event);
 private:
 
     void updateVideoGeometry();
@@ -31,5 +37,7 @@ private:
     int videoOrgHeight = 0;
 
     QPushButton *openFileBtn;
+    QSlider *slider;
+    bool isSliderPressed = false;
 };
 #endif // WIDGET_H
