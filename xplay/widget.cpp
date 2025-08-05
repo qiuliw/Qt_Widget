@@ -81,7 +81,7 @@ void Widget::OpenFile()
     qDebug() << "OpenFile:" << url;
     if(url.isEmpty()) return;
     this->setWindowTitle(url);
-    if(!dt->Open(url.toLocal8Bit(), videoWidget)){
+    if(!dt->Open(url.toUtf8().constData(), videoWidget)){
         QMessageBox::information(this, "提示", "打开失败");
         return;
     }

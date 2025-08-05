@@ -4,7 +4,6 @@
 #include <QThread>
 #include <cstddef>
 #include <mutex>
-#include <qtmetamacros.h>
 
 
 class XDemux;
@@ -20,9 +19,9 @@ public:
     // 创建对象并打开
     virtual bool Open(const char *url,IVideoCall *call);
     AVPacket *Read();
+    void Close();
     // 启动所有线程
     virtual void Start();
-
 
 
 private:

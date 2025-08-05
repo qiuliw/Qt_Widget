@@ -43,6 +43,8 @@ set(PROJECT_SOURCES
         IVideoCall.h
         XDemuxThread.cpp
         XDemuxThread.h
+        XDecodeThread.cpp
+        XDecodeThread.h
 )
 # 头文件目录
 include_directories(${PROJECT_SOURCE_DIR})

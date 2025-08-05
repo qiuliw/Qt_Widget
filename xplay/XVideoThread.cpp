@@ -24,31 +24,27 @@ XVideoThread::XVideoThread()
 
 XVideoThread::~XVideoThread()
 {
-    isExit_ = true;
-    wait(); // 终止线程等待run停止去回收
 }
 
 void XVideoThread::run()
 {
     auto pcm = std::make_unique<unsigned char[]>(1024 * 1024 * 10);
     while (!isExit_) {
-        std::unique_lock<std::mutex> lk(mtx_);
 
-        // 确保有数据
-        cv_.wait(lk, [this] { return isExit_ || !packets_.empty(); });
-        if (isExit_) break;
-        AVPacket* pkt = packets_.front();
-        packets_.pop_front();
-        
-        
-        if(!decode_) {
-            lk.unlock();
+        AVPacket *pkt = Pop();
+        if(!pkt){
             msleep(1);
             continue;
         }
 
+        if(!decode_) {
+            msleep(1);
+            continue;
+        }
+
+        std::unique_lock<std::mutex> lk(mtx_);
+
         bool re = decode_->Send(pkt);
-        // av_packet_free(&pkt); 灾难
         if(!re){
             lk.unlock();
             msleep(1);
@@ -97,15 +93,22 @@ bool XVideoThread::Open(AVCodecParameters *para,IVideoCall *call)
     return true;
 }
 
-void XVideoThread::Push(AVPacket *pkt)
+void XVideoThread::Close()
 {
-    if (!pkt) return;
-    std::unique_lock<std::mutex> lk(mtx_);
-    // 队列满时等待，直到消费者取出数据
-    cv_.wait(lk, [this] { return isExit_ || packets_.size() < maxList_; });
-    if (isExit_) return;
-
-    packets_.push_back(pkt);
-    cv_.notify_one(); // 通知消费者有新数据
+    std::lock_guard<std::mutex> lk(mtx_);
     
+    // 清理队列中的数据包
+    while(!packets_.empty()) {
+        AVPacket* pkt = packets_.front();
+        packets_.pop_front();
+        av_packet_free(&pkt);
+    }
+    
+    // 关闭解码器
+    if(decode_) {
+        delete decode_;
+        decode_ = nullptr;
+    }
+    
+    call_ = nullptr;
 }

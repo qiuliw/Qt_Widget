@@ -83,7 +83,6 @@ bool XDecode::Send(AVPacket *pkt)
     av_packet_free(&pkt);
     if(re != 0) return false;
     return true;
-    
 }
 // 从解码器获取解码后的数据，一次send可能需要多次Recv。如果要读取缓冲中的数据， Send NULL再Recv多次
 // 每次复制一份，由调用者释放 av_frame_free(&frame);

@@ -3,7 +3,6 @@
 #include "IVideoCall.h"
 #include "XVideoWidget.h"
 #include <QThread>
-#include <list>
 #include <mutex>
 #include <QAudioSink>
 #include <queue>
@@ -17,19 +16,21 @@ class AVPacket;
 
 // 视频解码播放线程
 // 负责视频解码，播放
-class XVideoThread : public XDecodeThread 
+class XDecodeThread : public QThread 
 { 
 public:
-    XVideoThread();
-    virtual ~XVideoThread();
+    XDecodeThread();
+    virtual ~XDecodeThread();
 
-    void run() override;
-    // 打开，不管是否成功都清理para。设置输出参数
-    bool Open(AVCodecParameters *para,IVideoCall *call);
-    void Close();
-    int64_t synpts_ = 0;
+    virtual void Push(AVPacket *pkt); // 阻塞
+    virtual AVPacket *Pop();
+
+    std::atomic<bool> isExit_ = false;
 protected:
-    IVideoCall *call_ = nullptr;
+    std::list<AVPacket*> packets_;
+    std::mutex mtx_;
+    int maxList_ = 100; // 最大缓存个数限制
     std::condition_variable cv_;
-    // 同步时间由外部传入
+    XDecode *decode_;
 };
+

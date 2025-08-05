@@ -34,7 +34,7 @@ const char* vString = GET_STR(
     }
 );
 
-// 片元shader
+// 片元shader - 使用标准BT.601 Full Range (PC Range) 转换
 const char* tString = GET_STR(
     varying highp vec2 textureOut;
     uniform sampler2D tex_y;
@@ -46,19 +46,19 @@ const char* tString = GET_STR(
         float u = texture2D(tex_u, textureOut).r;
         float v = texture2D(tex_v, textureOut).r;
         
-        y = 1.1643 * (y - 0.0625);
+        // Full Range (PC Range) BT.601
+        // Y: 0-255, UV: 0-255
+        y = 1.164 * (y - 0.0625);
         u = u - 0.5;
         v = v - 0.5;
         
-        // YUV到RGB转换
-        float r = y + 1.5958 * v;
-        float g = y - 0.3917 * u - 0.8129 * v;
-        float b = y + 2.017 * u;
+        float r = y + 1.596 * v;
+        float g = y - 0.391 * u - 0.813 * v;
+        float b = y + 2.018 * u;
         
         gl_FragColor = vec4(r, g, b, 1.0);
     }
 );
-
 XVideoWidget::XVideoWidget(QWidget *parent) : QOpenGLWidget(parent)
 {
     // 初始化 program_ 指针
@@ -122,7 +122,7 @@ void XVideoWidget::Init(int width, int height)
     
 }
 
-// 将帧读入材质内存,绘制
+// 将帧读入材质内存,绘制// 将帧读入材质内存,绘制
 void XVideoWidget::Repaint(AVFrame *frame)
 {
     std::lock_guard<std::mutex> lk(mtx_);
@@ -131,33 +131,38 @@ void XVideoWidget::Repaint(AVFrame *frame)
         return;
     }
 
-
     // 检查像素格式是否为YUV420P
     if (frame->format != AV_PIX_FMT_YUV420P) {
         qDebug() << "Warning: Frame format is not YUV420P:" << frame->format;
-        // 可能需要进行格式转换
+        // 这里应该添加格式转换代码，或者直接返回
+        return;
     }
 
-    // 行对齐问题
-    // 修复行对齐问题 - 正确处理frame的linesize
-    // Y平面
+    // 更安全的数据复制方式，考虑linesize
+    // Y平面 - 使用实际的linesize而不是width
     for (int i = 0; i < height_; i++) {
-        memcpy(datas[0] + i * width_, frame->data[0] + i * frame->linesize[0], width_);
+        memcpy(datas[0] + i * width_, 
+               frame->data[0] + i * frame->linesize[0], 
+               width_);
     }
     
-    // U平面
+    // U平面 - 注意宽度和高度都是原来的一半
     for (int i = 0; i < height_/2; i++) {
-        memcpy(datas[1] + i * width_/2, frame->data[1] + i * frame->linesize[1], width_/2);
+        memcpy(datas[1] + i * (width_/2), 
+               frame->data[1] + i * frame->linesize[1], 
+               width_/2);
     }
     
-    // V平面
+    // V平面 - 注意宽度和高度都是原来的一半
     for (int i = 0; i < height_/2; i++) {
-        memcpy(datas[2] + i * width_/2, frame->data[2] + i * frame->linesize[2], width_/2);
+        memcpy(datas[2] + i * (width_/2), 
+               frame->data[2] + i * frame->linesize[2], 
+               width_/2);
     }
+    
     // 刷新显示
     update();
 }
-
 void XVideoWidget::initializeGL()
 {
     std::lock_guard<std::mutex> lk(mtx_);    

@@ -21,9 +21,7 @@ XAudioThread::XAudioThread()
 
 XAudioThread::~XAudioThread()
 {
-    // 等待线程退出
-    isExit_ = true;
-    wait(); // 等待run线程任务循环主动退出
+
 }
 
 
@@ -31,19 +29,21 @@ void XAudioThread::run() {
     
     auto pcm = std::make_unique<unsigned char[]>(1024 * 1024 * 10);
     while (!isExit_) {
-        std::unique_lock<std::mutex> lk(mtx_);
-        // 确保有数据
-        cv_.wait(lk, [this] { return isExit_ || !packets_.empty(); });
-        if (isExit_) break;
-        AVPacket* pkt = packets_.front();
-        packets_.pop_front();
+        
+        
+        AVPacket *pkt = Pop();
+        
+        if(!pkt){
+            msleep(1);
+            continue;
+        }
         
         if(!decode_||!resample_||!ap_) {
-            lk.unlock();
             msleep(1);
             continue;
         }
 
+        std::unique_lock<std::mutex> lk(mtx_);
         bool re = decode_->Send(pkt);
         // av_packet_free(&pkt); 灾难
         if(!re){
@@ -80,6 +80,9 @@ bool XAudioThread::Open(AVCodecParameters *para,int sampleRate, int channels, QA
 {
     if(!para) return false;
     
+    // 先清理之前的状态
+    Close();
+
     std::lock_guard<std::mutex> lk(mtx_);
     pts_ = 0;
     if(!decode_)
@@ -110,14 +113,29 @@ bool XAudioThread::Open(AVCodecParameters *para,int sampleRate, int channels, QA
     return true;
 }
 
-
-void XAudioThread::Push(AVPacket* pkt) {
-    if (!pkt) return;
-    std::unique_lock<std::mutex> lk(mtx_);
-    // 队列满时等待，直到消费者取出数据
-    cv_.wait(lk, [this] { return isExit_ || packets_.size() < maxList_; });
-    if (isExit_) return;
-
-    packets_.push_back(pkt);
-    cv_.notify_one(); // 通知消费者有新数据
+void XAudioThread::Close()
+{
+    std::lock_guard<std::mutex> lk(mtx_);
+    
+    // 清理队列中的数据包
+    while(!packets_.empty()) {
+        AVPacket* pkt = packets_.front();
+        packets_.pop_front();
+        av_packet_free(&pkt);
+    }
+    
+    // 关闭各个组件
+    if(decode_) {
+        delete decode_;
+        decode_ = nullptr;
+    }
+    if(resample_) {
+        delete resample_;
+        resample_ = nullptr;
+    }
+    if(ap_) {
+        ap_->Stop();
+    }
+    
+    pts_ = 0;
 }
