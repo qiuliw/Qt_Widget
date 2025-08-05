@@ -70,6 +70,7 @@ XVideoWidget::~XVideoWidget()
 
 }
 
+
 // 初始化材质内存与材质原始宽高，每次渲染时从文件读入材质
 void XVideoWidget::Init(int width, int height)
 {
@@ -159,10 +160,8 @@ void XVideoWidget::Repaint(AVFrame *frame)
 
 void XVideoWidget::initializeGL()
 {
-    std::lock_guard<std::mutex> lk(mtx_);
-
+    std::lock_guard<std::mutex> lk(mtx_);    
     initializeOpenGLFunctions();
-    
     // 设置清屏颜色
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
 

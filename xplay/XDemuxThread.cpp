@@ -16,10 +16,10 @@ XDemuxThread::XDemuxThread()
 
 XDemuxThread::~XDemuxThread()
 {
+    isExit_ = true;
     delete vt_;
     delete at_;
     delete demux_;
-    isExit_ = true;
     wait(); // 对象销毁在主线程，主线程等待子线程结束
 }
 
@@ -91,9 +91,18 @@ bool XDemuxThread::Open(const char *url,IVideoCall *call)
 void XDemuxThread::Start()
 {
     std::lock_guard<std::mutex> lk(mtx_);
+
+    if(!demux_){
+        demux_ = new XDemux();
+    }
+    if(!vt_) vt_ = new XVideoThread();
+    vt_->start();
+    if(!at_) at_ = new XAudioThread();
+    at_->start();
+
     // 启动当前线程
     QThread::start();
-    if(vt_) vt_->start();
-    if(at_) at_->start();
+    
+    
     
 }

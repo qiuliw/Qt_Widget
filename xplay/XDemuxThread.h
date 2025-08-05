@@ -4,6 +4,7 @@
 #include <QThread>
 #include <cstddef>
 #include <mutex>
+#include <qtmetamacros.h>
 
 
 class XDemux;
@@ -21,6 +22,7 @@ public:
     AVPacket *Read();
     // 启动所有线程
     virtual void Start();
+
 
 
 private:

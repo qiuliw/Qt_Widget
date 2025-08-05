@@ -19,6 +19,8 @@ public:
     void Init(int width, int height) override;
     // 不管成功与否都释放掉frame空间
     virtual void Repaint(AVFrame *frame) override;// 画面重绘
+    int Height(){return height_;}
+    int Width(){return width_;}
 protected:
     void initializeGL() override;
     void paintGL() override;
@@ -34,8 +36,8 @@ private:
     // 材质的内存空间
     unsigned char* datas[3] = {0};
 
-    int width_;
-    int height_;
+    int width_ = 600;
+    int height_ = 480;
 
     std::mutex mtx_;
 };

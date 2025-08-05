@@ -142,8 +142,5 @@ int main(int argc, char *argv[])
     // tt.video = w.videoWidget;
     // tt.start();
 
-    XDemuxThread dt;
-    dt.Open("hm.mp4", w.videoWidget);
-    dt.Start();
     return a.exec();
 }
