@@ -27,6 +27,9 @@ public:
     const AVCodec* codec_ = nullptr;
     AVCodecContext *codecCtx_ = nullptr;
 
+    // 当前解码到的pts
+    long long pts_ = 0;
+
     // 需要锁，不能同时对解码器操作同时close
     std::mutex mtx_;
 

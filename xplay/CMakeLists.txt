@@ -9,6 +9,16 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# MSVC 编译器特殊配置
+if(MSVC)
+    # 启用 /Zc:__cplusplus 以正确报告 C++版本
+    add_compile_options(/Zc:__cplusplus)
+    # 可选：禁用某些警告或放宽标准（如需要）
+    add_compile_options(/permissive-)
+    # 强制 MSVC 使用 UTF-8 解析源码
+    add_compile_options(/utf-8)  
+endif()
+
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets OpenGLWidgets Multimedia)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets OpenGLWidgets Multimedia)
 
@@ -88,18 +98,6 @@ if(QT_VERSION_MAJOR EQUAL 6)
 endif()
 
 
-# libevent
-if(WIN32)
-    set(LIBEVENT_ROOT_DIR "D:/Software/libevent-2.1.12-stable")
-    include_directories("${LIBEVENT_ROOT_DIR}/include" "${LIBEVENT_ROOT_DIR}/build/include")
-    target_link_directories(${PROJECT_NAME} PUBLIC "${LIBEVENT_ROOT_DIR}/build/lib")
-    target_link_libraries(${PROJECT_NAME} PRIVATE event ws2_32)
-else()
-    find_package(${PROJECT_NAME} REQUIRED)
-    include_directories(${LIBEVENT_INCLUDE_DIRS})
-    target_link_libraries(${PROJECT_NAME} PRIVATE Libevent::libevent pthread)
-endif()
-
 # ffmpeg
 set(FFMPEG_ROOT_DIR  "D:/Software/ffmpeg-7.1.1-full_build-shared")
 target_include_directories(${PROJECT_NAME} PRIVATE
@@ -113,6 +111,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
         swscale
         swresample
 )
+
 
 # 如果需要控制台输出，添加以下行
 if(WIN32)

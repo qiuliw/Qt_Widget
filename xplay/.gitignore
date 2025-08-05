@@ -82,3 +82,6 @@ CMakeLists.txt.user*
 build/
 
 cmake-build-*/
+.vs/
+build/
+out/

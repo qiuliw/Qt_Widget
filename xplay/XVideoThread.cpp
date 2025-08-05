@@ -1,5 +1,6 @@
 #include "XVideoThread.h"
 #include "XDecode.h"
+#include <cstdint>
 #include <iostream>
 #include <mutex>
 
@@ -38,23 +39,35 @@ void XVideoThread::run()
         if (isExit_) break;
         AVPacket* pkt = packets_.front();
         packets_.pop_front();
-        lk.unlock(); // 提前释放锁，减少临界区
         cv_.notify_one(); // 通知生产者可以继续推数据
         
         if(!decode_) {
+            lk.unlock();
             msleep(1);
             continue;
         }
 
         bool re = decode_->Send(pkt);
         if(!re){
+            lk.unlock();
             msleep(1);
             continue;
         }
         // 一次send 多次recv
         while(!isExit_){
             AVFrame *frame = decode_->Recv();
+            int64_t pts = 0;
             if(!frame) break;
+
+            // 音视频同步 - 在帧级别进行同步控制
+            if ( decode_->pts_ > synpts_) {
+                // 计算需要等待的时间，但设置上限避免无限等待
+                long long sleep_ms = (decode_->pts_ - synpts_) / 1000; // 转换为毫秒
+                if (sleep_ms > 100) sleep_ms = 100; // 最多等待100ms
+                if (sleep_ms > 0) {
+                    msleep(sleep_ms);
+                }
+            }
 
             // 播放视频
             call_->Repaint(frame);

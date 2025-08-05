@@ -19,6 +19,8 @@ public:
     virtual void SetVolume(float volume) ;
     virtual int GetState();
     virtual int GetFree();
+    // 获取未播放时长
+    virtual long long GetNoPlayMs();
 private:
     explicit XAudioPlay();
     QAudioFormat format_;

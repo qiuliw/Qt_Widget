@@ -5,6 +5,10 @@
 #include <iostream>
 #include <mutex>
 
+extern "C"{
+    #include <libavcodec/packet.h>
+}
+
 XDemuxThread::XDemuxThread()
 {
     
@@ -12,9 +16,9 @@ XDemuxThread::XDemuxThread()
 
 XDemuxThread::~XDemuxThread()
 {
-    delete demux_;
     delete vt_;
     delete at_;
+    delete demux_;
     isExit_ = true;
     wait(); // 对象销毁在主线程，主线程等待子线程结束
 }
@@ -28,6 +32,11 @@ void XDemuxThread::run()
             msleep(5);
             continue;
         }
+
+        if(vt_&&at_){
+           vt_->synpts_ = at_->pts_;
+        }
+
         AVPacket *pkt = demux_->Read();
         if(!pkt){
             lk.unlock();
@@ -36,11 +45,12 @@ void XDemuxThread::run()
         }
         if(demux_->isVideo(pkt)){
             // 视频
-            vt_->Push(pkt);
+            vt_->Push(pkt); 
         }else if(demux_->isAudio(pkt)){
             // 音频
-            at_->Push(pkt);
+            at_->Push(pkt);// 可能被阻塞
         }
+        av_packet_unref(pkt);
     }
 }
 

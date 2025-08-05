@@ -100,6 +100,7 @@ AVFrame* XDecode::Recv()
         av_frame_free(&frame);
         return nullptr;
     }
+    pts_ = frame->pts;
     return frame;
 }
 
@@ -111,6 +112,7 @@ void XDecode::Close()
         avcodec_close(codecCtx_);
         avcodec_free_context(&codecCtx_);
     }
+    pts_ = 0;
 }
 
 void XDecode::Clear()

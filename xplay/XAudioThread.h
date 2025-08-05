@@ -24,7 +24,9 @@ public:
     bool Open(AVCodecParameters *para,int sampleRate = 44100, int channels = 2, QAudioFormat::SampleFormat sampleFormat = QAudioFormat::Int16,bool destroyPara = true);
     // 向队列添加数据包
     virtual void Push(AVPacket *pkt); // 阻塞
+
     std::atomic<bool> isExit_ = false;
+    int64_t pts_ = 0; // 当前音频播放的pts
 protected:
     XDecode *decode_ = nullptr;
     XAudioPlay *ap_ = nullptr;

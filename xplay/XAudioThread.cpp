@@ -5,9 +5,11 @@
 #include <iostream>
 #include <memory>
 #include <mutex>
+#include <qdebug.h>
 
 extern "C"{
     #include <libavcodec/codec_par.h>
+    #include <libavcodec/avcodec.h>
 }
 
 XAudioThread::XAudioThread()
@@ -34,16 +36,17 @@ void XAudioThread::run() {
         if (isExit_) break;
         AVPacket* pkt = packets_.front();
         packets_.pop_front();
-        lk.unlock(); // 提前释放锁，减少临界区
         cv_.notify_one(); // 通知生产者可以继续推数据
         
         if(!decode_||!resample_||!ap_) {
+            lk.unlock();
             msleep(1);
             continue;
         }
 
         bool re = decode_->Send(pkt);
         if(!re){
+            lk.unlock();
             msleep(1);
             continue;
         }
@@ -51,6 +54,9 @@ void XAudioThread::run() {
         while(!isExit_){
             AVFrame *frame = decode_->Recv();
             if(!frame) break;
+            // 计算当前正在播放的音频时间戳
+            // 解码的时间戳减去缓冲未播放时间（微秒）
+            pts_ = frame->pts - ap_->GetNoPlayMs();
             // 音频重采样
             int size = resample_->Resample(frame,pcm.get());
             if(size<=0) break;
@@ -73,7 +79,7 @@ bool XAudioThread::Open(AVCodecParameters *para,int sampleRate, int channels, QA
     if(!para) return false;
     
     std::lock_guard<std::mutex> lk(mtx_);
-    
+    pts_ = 0;
     if(!decode_)
         decode_ = new XDecode();
     if(!resample_)

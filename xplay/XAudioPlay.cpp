@@ -1,6 +1,8 @@
 #include "XAudioPlay.h"
 #include <QDebug>
+#include <iostream>
 #include <mutex>
+#include <qdebug.h>
 #include <qlogging.h>
 #include <QAudioSink>
 
@@ -119,4 +121,26 @@ int XAudioPlay::GetFree()
         InitSink();
     }
     return audio_sink_->bytesFree();
+}
+
+long long XAudioPlay::GetNoPlayMs() {
+    std::lock_guard<std::mutex> lk(mtx_);
+    if (!audio_sink_ || !is_initialized_) return 0;
+
+    // 1. 计算未播放的字节数（已使用的缓冲区大小）
+    int unplayed_bytes = audio_sink_->bufferSize() - audio_sink_->bytesFree();
+    // 防止缓冲区未使用时出现负数（理论上不会，但保险）
+    if (unplayed_bytes < 0) unplayed_bytes = 0;
+    qDebug() << "unplayed_bytes: " << unplayed_bytes;
+
+    // 2. 计算每秒字节数（修正核心公式）
+    double bytes_per_second = format_.sampleRate() * format_.channelCount() * format_.bytesPerSample();
+    if (bytes_per_second <= 0) return 0; // 避免除零
+    qDebug() << "bytes_per_second: " << bytes_per_second;
+
+    // 3. 转换为毫秒
+    double unplayed_seconds = unplayed_bytes / bytes_per_second;
+    long long unplayed_us = static_cast<long long>(unplayed_seconds * 1e3);
+
+    return unplayed_us;
 }

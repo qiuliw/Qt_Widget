@@ -75,7 +75,7 @@ bool XDemux::Open(const char *url)
         AVStream *as = ic_->streams[videoStream_];
         width_ = as->codecpar->width;
         height_ = as->codecpar->height;
-        qDebug() << "视频流信息";
+        std::cout << "视频流信息" << std::endl;
         std::cout << "width: " << as->codecpar->width << std::endl;
         std::cout << "height: " << as->codecpar->height << std::endl;
         std::cout << "format :" << as->codecpar->format << std::endl;
