@@ -50,7 +50,6 @@ void XDemuxThread::run()
             // 音频
             at_->Push(pkt);// 可能被阻塞
         }
-        av_packet_unref(pkt);
     }
 }
 

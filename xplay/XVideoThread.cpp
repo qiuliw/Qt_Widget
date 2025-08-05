@@ -14,7 +14,7 @@ extern "C"{
     #include "libavutil/time.h"
     #include "libavutil/pixfmt.h"
     #include "libavutil/pixdesc.h"
-
+    #include <libavcodec/packet.h>
 }
 
 XVideoThread::XVideoThread()
@@ -39,7 +39,7 @@ void XVideoThread::run()
         if (isExit_) break;
         AVPacket* pkt = packets_.front();
         packets_.pop_front();
-        cv_.notify_one(); // 通知生产者可以继续推数据
+        
         
         if(!decode_) {
             lk.unlock();
@@ -48,6 +48,7 @@ void XVideoThread::run()
         }
 
         bool re = decode_->Send(pkt);
+        // av_packet_free(&pkt); 灾难
         if(!re){
             lk.unlock();
             msleep(1);
@@ -73,6 +74,7 @@ void XVideoThread::run()
             call_->Repaint(frame);
             av_frame_free(&frame);
         }
+        cv_.notify_one(); // 通知生产者可以继续推数据
     }
 }
 

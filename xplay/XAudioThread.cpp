@@ -10,6 +10,8 @@
 extern "C"{
     #include <libavcodec/codec_par.h>
     #include <libavcodec/avcodec.h>
+    #include <libavcodec/packet.h>
+
 }
 
 XAudioThread::XAudioThread()
@@ -30,13 +32,11 @@ void XAudioThread::run() {
     auto pcm = std::make_unique<unsigned char[]>(1024 * 1024 * 10);
     while (!isExit_) {
         std::unique_lock<std::mutex> lk(mtx_);
-
         // 确保有数据
         cv_.wait(lk, [this] { return isExit_ || !packets_.empty(); });
         if (isExit_) break;
         AVPacket* pkt = packets_.front();
         packets_.pop_front();
-        cv_.notify_one(); // 通知生产者可以继续推数据
         
         if(!decode_||!resample_||!ap_) {
             lk.unlock();
@@ -45,6 +45,7 @@ void XAudioThread::run() {
         }
 
         bool re = decode_->Send(pkt);
+        // av_packet_free(&pkt); 灾难
         if(!re){
             lk.unlock();
             msleep(1);
@@ -71,6 +72,7 @@ void XAudioThread::run() {
                 break;
             }
         }
+        cv_.notify_one(); // 通知生产者可以继续推数据
     }
 }
 
