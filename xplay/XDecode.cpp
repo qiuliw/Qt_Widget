@@ -108,7 +108,6 @@ void XDecode::Close()
     std::lock_guard<std::mutex> lk(mtx_);
 
     if(codecCtx_){
-        avcodec_close(codecCtx_);
         avcodec_free_context(&codecCtx_);
     }
     pts_ = 0;

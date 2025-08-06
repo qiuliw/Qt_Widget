@@ -26,6 +26,8 @@ public:
     // 暂停/恢复播放
     void SetPause(bool isPause);
     bool IsPaused();
+
+    void Seek(double pos);
     
     long long pts_ = 0;
     long long totalMs_ = 0;

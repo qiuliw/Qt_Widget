@@ -119,7 +119,7 @@ void XDemuxThread::Clear()
         at_->Clear();
     }
     if(demux_) {
-        demux_->Close();
+        demux_->Clear();
     }
 }
 
@@ -143,15 +143,37 @@ void XDemuxThread::Start()
 void XDemuxThread::SetPause(bool isPause) 
 {
     isPause_ = isPause;
-    
-    std::lock_guard<std::mutex> lk(mtx_);
+    {
+        std::lock_guard<std::mutex> lk(mtx_);
 
-    // 同步设置音频和视频线程的暂停状态
-    if(at_) at_->SetPause(isPause);
-    if(vt_) vt_->SetPause(isPause);
+        // 同步设置音频和视频线程的暂停状态
+        if(at_) at_->SetPause(isPause);
+        if(vt_) vt_->SetPause(isPause);
+    }
+
 }
 
 bool XDemuxThread::IsPaused() 
 {
     return isPause_;
+}
+
+void XDemuxThread::Seek(double pos) 
+{
+    if (!demux_) return;
+    
+    // 先暂停播放
+    SetPause(true);
+    std::cout << "seek start" << std::endl;
+    Clear();
+    std::cout << "seek pos:" << pos << std::endl;
+    {
+        std::lock_guard<std::mutex> lk(mtx_);
+        // 执行实际的seek操作
+        demux_->Seek(pos);
+    }
+
+    std::cout << "seek end" << std::endl;
+    // 恢复之前的状态
+    SetPause(false);
 }

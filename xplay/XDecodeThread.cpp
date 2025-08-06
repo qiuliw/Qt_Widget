@@ -60,6 +60,10 @@ AVPacket* XDecodeThread::Pop()
 // 清理队列
 void XDecodeThread::Clear()
 {
+
+    if(decode_)
+        decode_->Clear();
+
     std::lock_guard<std::mutex> lk(mtx_);
     
     // 清理队列中的数据包
@@ -69,8 +73,7 @@ void XDecodeThread::Clear()
         av_packet_free(&pkt);
     }
 
-    if(decode_)
-        decode_->Clear();
+
 }
 
 void XDecodeThread::SetPause(bool isPause)

@@ -183,10 +183,10 @@ AVCodecParameters* XDemux::CopyAPara()
 // seek 位置 pos 0.0 ~ 1.0
 bool XDemux::Seek(double pos) // 不保证跳转到关键帧
 {
-    std::lock_guard<std::mutex> lk(mtx_);
     if(!ic_)
         return false;
 
+    std::lock_guard<std::mutex> lk(mtx_);
 
     int seekPos = ic_->streams[videoStream_]->duration * pos;
     

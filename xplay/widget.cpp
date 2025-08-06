@@ -42,6 +42,12 @@ Widget::Widget(QWidget *parent)
     connect(slider, &QSlider::sliderReleased, this, &Widget::SliderReleased);
     connect(slider, &QSlider::valueChanged, this, &Widget::SliderMoved);
 
+    auto seekdemo = new QPushButton("Seek0.5", this);
+    seekdemo->move(200, 10);
+    connect(seekdemo, &QPushButton::clicked, [this]() {
+        dt->Seek(0.5);
+    });
+
     dt = new XDemuxThread();
     dt->Start();
 
@@ -125,8 +131,11 @@ void Widget::SliderPressed()
 void Widget::SliderReleased()
 {
     isSliderPressed = false;
-    // 当用户释放滑块时，跳转到相应位置
-    // dt->Seek(slider->value());
+
+    if (dt) {
+        double pos = slider->value() / 1000.0;
+        dt->Seek(pos);
+    }
 }
 
 void Widget::SliderMoved(int value)
@@ -139,6 +148,7 @@ void Widget::SliderMoved(int value)
 }
 
 void Widget::timerEvent(QTimerEvent *e){
+    if(isSliderPressed) return;
     long long total = dt->totalMs_;
     if(total > 0){
         double pos = (double)dt->pts_ / (double)total;
